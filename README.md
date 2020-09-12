@@ -1,1 +1,1 @@
-# applied-statistics
+# my_website
