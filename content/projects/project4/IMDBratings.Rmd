@@ -1,0 +1,111 @@
+---
+title: "IMDB ratings"
+output: html_document
+---
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(GGally)
+library(readxl)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(lubridate)
+library(tidyquant)
+library(infer)
+library(openintro)
+```
+
+# IMDB ratings: Differences between directors
+
+We will now consider the IMBD ratings data.
+
+
+```{r directors, echo=FALSE, out.width="100%"}
+knitr::include_graphics(here::here("images", "directors.png"), error = FALSE)
+```
+
+H0: Spielberg and Burton have the same mean IMDB ratings.
+H1: Spielberg and Burton do not have the same mean IMDB ratings.
+Resulting test stats: t-stat for a confidence level of 95%, t-stat > 1.96
+We want to refuse H0 and accept H1 to conclude that there is a difference in mean between Spielberg and Burton.
+
+```{r load-movies-data}
+
+movies <- vroom::vroom(here::here("data", "movies.csv"))
+glimpse(movies)
+```
+
+```{r}
+#create new dataframe for Steven Spielberg and Tim Burton and caculate statistical values
+movies_plot <- movies %>%
+  group_by(director)%>%
+  filter(director=="Steven Spielberg" | director=="Tim Burton") %>%
+  mutate(mean_rating=round((mean(rating, na.rm = TRUE)), digits=2),
+            sd_rating = sd(rating, na.rm=TRUE),
+            count = n(),
+            se_rating = sd_rating/sqrt(count),
+            t_critical = qt(0.975, count-1), 
+            margin_of_error = t_critical * se_rating,
+            lower = round((mean_rating - t_critical * se_rating),digits=2),
+            upper = round((mean_rating + t_critical * se_rating), digits=2)
+            )
+
+t.test(rating ~ movies_plot$t_critical, data = movies_plot)
+
+
+
+```
+
+We are now reproducing the graph from above.
+
+```{r}
+
+library(ggThemeAssist)
+
+#assigning colors to the two directors
+colors = ifelse(movies_plot$director == "Steven Spielberg", "#fb8072", "#41b6c4")
+colorss = ifelse(movies_plot$director == "Steven Spielberg", "#41b6c4", "#fb8072")
+
+#creating the graph using rectanglefor the intersection areas, adding coordinates and adapting design 
+movies_boxplot <- ggplot() +
+  geom_errorbar(movies_plot, mapping = aes(x=rating, y=reorder(director, rating), xmin=lower, xmax=upper), 
+                width=0.2, size=1, color=colors) +
+  geom_point(movies_plot, mapping = aes(x=mean_rating, y=director, color=colorss)) +
+  geom_text(aes(label=movies_plot$mean_rating),hjust=0, vjust=0, x=(movies_plot$mean_rating), y=movies_plot$director, 
+            size=5, vjust = -1.5) +
+  geom_text(aes(label=movies_plot$upper),hjust=0, vjust=0, x=((movies_plot$upper)), y=movies_plot$director, size=4) +
+  geom_text(aes(label=movies_plot$lower),hjust=0, vjust=0, x=(movies_plot$lower), y=movies_plot$director, size=4) +
+  theme_bw() +
+  labs(title = "Do Spielberg and Burton have the same mean IMBD rating?", 
+       x = "Mean IMDB Rating", y = NULL, subtitle = "95% confidence intervals overlap") +
+  geom_rect(movies_plot, mapping = aes(x=rating, y=reorder(director, rating), xmin=movies_plot$upper[4], 
+                                       xmax=movies_plot$lower[1], ymin=0, ymax=3), fill = "grey", alpha = 0.03) +
+  scale_x_continuous(expand=c(-0.17,-0.17),breaks= c(6.5, 7.0, 7.5))  + 
+  theme(legend.position = "none")
+  
+  
+movies_boxplot
+
+```
+
