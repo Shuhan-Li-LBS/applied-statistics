@@ -99,7 +99,7 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "Analysis of movies"
-      subtitle = "From IMDB dataset"
+      subtitle = "Data from IMDB dataset"
       image = "pic02.jpg"
       url = "blogs/blog2"
 
