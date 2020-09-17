@@ -92,10 +92,10 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Project 1"
-      subtitle = "Ipsum Dolor Sit Amet"
+      title = "Beer, wine, and Spirits"
+      subtitle = "Where Do People Drink The Most Beer, Wine And Spirits?"
       image = "pic01.jpg"
-      url = "blogs/aliquam"
+      url = "blogs/blog1"
 
     [[params.tiles.showcase]]
       title = "Project 1"
