@@ -105,13 +105,13 @@ disqusShortname = ""
 
     [[params.tiles.showcase]]
       title = "Gapminder Revisited"
-      subtitle = "Lorem Etiam Nullam"
+      subtitle = "Gapminder Revisited"
       image = "pic03.jpg"
       url = "projects/project3"
 
     [[params.tiles.showcase]]
       title = "IMDB Ratings"
-      subtitle = "Nisl Sed Aliquam"
+      subtitle = "IMDB Ratings"
       image = "pic04.jpg"
       url = "projects/project4"
 
