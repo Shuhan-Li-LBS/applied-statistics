@@ -95,25 +95,25 @@ disqusShortname = ""
       title = "Beer, wine, and Spirits"
       subtitle = "Where Do People Drink The Most Beer, Wine And Spirits?"
       image = "pic01.jpg"
-      url = "projects/project1"
+      url = "blogs/blog1"
 
     [[params.tiles.showcase]]
       title = "Analysis of movies"
       subtitle = "From IMDB dataset"
       image = "pic02.jpg"
-      url = "projects/project2"
+      url = "blogs/blog2"
 
     [[params.tiles.showcase]]
       title = "Gapminder Revisited"
       subtitle = "Gapminder Revisited"
       image = "pic03.jpg"
-      url = "projects/project3"
+      url = "blogs/blog3"
 
     [[params.tiles.showcase]]
       title = "IMDB Ratings"
       subtitle = "IMDB Ratings"
       image = "pic04.jpg"
-      url = "projects/project4"
+      url = "blogs/blog4"
 
     # [[params.tiles.showcase]]
       # title = "Consequat"
