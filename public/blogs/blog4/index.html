@@ -1,0 +1,219 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="description" content="A feminist and a life-long explorer.">
+	<meta name="author" content="Shuhan Li">
+	<meta name="generator" content="Hugo 0.75.1" />
+	<title>IMDB ratings &middot; Portfolio website for Shuhan Li</title>
+	<!-- Stylesheets -->
+	
+	<link rel="stylesheet" href="/css/main.css"/>
+	
+	
+
+	
+
+	<!-- Custom Fonts -->
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	
+
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="js/ie/html5shiv.js"></script>
+	<script src="js/ie/html5shiv.jsrespond.min.js"></script>
+	<![endif]-->
+</head>
+
+    <body>
+
+    <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Header -->
+    <header id="header" class="alt">
+        <a href="/" class="logo"><strong>Shuhan Li</strong> <span></span></a>
+        <nav>
+            <a href="#menu">Menu</a>
+        </nav>
+    </header>
+
+<!-- Menu -->
+    <nav id="menu">
+        <ul class="links">
+            
+                <li><a href="/">Home</a></li>
+            
+                <li><a href="/blogs">Blogs</a></li>
+            
+                <li><a href="/blogs/ipsum">Generic Blog</a></li>
+            
+                <li><a href="/elements.html">Elements</a></li>
+            
+
+        </ul>
+        <ul class="actions vertical">
+            
+                <li><a href="/blogs" class="button special fit">Get Started</a></li>
+            
+            
+                <li><a href="/" class="button fit">Log In</a></li>
+            
+        </ul>
+    </nav>
+
+        <!-- Main -->
+            <div id="main" class="alt">
+
+                
+                    <section id="one">
+                        <div class="inner">
+                            <header class="major">
+                                <h1>IMDB ratings</h1>
+                            </header>
+                            
+                            
+
+
+<div id="imdb-ratings-differences-between-directors" class="section level1">
+<h1>IMDB ratings: Differences between directors</h1>
+<p>We will now consider the IMBD ratings data.</p>
+<p><img src="C:/Users/shuha/OneDrive/LBS/Git/my_website/images/directors.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>H0: Spielberg and Burton have the same mean IMDB ratings.
+H1: Spielberg and Burton do not have the same mean IMDB ratings.
+Resulting test stats: t-stat for a confidence level of 95%, t-stat &gt; 1.96
+We want to refuse H0 and accept H1 to conclude that there is a difference in mean between Spielberg and Burton.</p>
+<pre class="r"><code>movies &lt;- vroom::vroom(here::here(&quot;data&quot;, &quot;movies.csv&quot;))
+glimpse(movies)</code></pre>
+<pre><code>## Rows: 2,961
+## Columns: 11
+## $ title               &lt;chr&gt; &quot;Avatar&quot;, &quot;Titanic&quot;, &quot;Jurassic World&quot;, &quot;The Ave...
+## $ genre               &lt;chr&gt; &quot;Action&quot;, &quot;Drama&quot;, &quot;Action&quot;, &quot;Action&quot;, &quot;Action&quot;...
+## $ director            &lt;chr&gt; &quot;James Cameron&quot;, &quot;James Cameron&quot;, &quot;Colin Trevor...
+## $ year                &lt;dbl&gt; 2009, 1997, 2015, 2012, 2008, 1999, 1977, 2015,...
+## $ duration            &lt;dbl&gt; 178, 194, 124, 173, 152, 136, 125, 141, 164, 93...
+## $ gross               &lt;dbl&gt; 7.61e+08, 6.59e+08, 6.52e+08, 6.23e+08, 5.33e+0...
+## $ budget              &lt;dbl&gt; 2.37e+08, 2.00e+08, 1.50e+08, 2.20e+08, 1.85e+0...
+## $ cast_facebook_likes &lt;dbl&gt; 4834, 45223, 8458, 87697, 57802, 37723, 13485, ...
+## $ votes               &lt;dbl&gt; 886204, 793059, 418214, 995415, 1676169, 534658...
+## $ reviews             &lt;dbl&gt; 3777, 2843, 1934, 2425, 5312, 3917, 1752, 1752,...
+## $ rating              &lt;dbl&gt; 7.9, 7.7, 7.0, 8.1, 9.0, 6.5, 8.7, 7.5, 8.5, 7....</code></pre>
+<pre class="r"><code>#create new dataframe for Steven Spielberg and Tim Burton and caculate statistical values
+movies_plot &lt;- movies %&gt;%
+  group_by(director)%&gt;%
+  filter(director==&quot;Steven Spielberg&quot; | director==&quot;Tim Burton&quot;) %&gt;%
+  mutate(mean_rating=round((mean(rating, na.rm = TRUE)), digits=2),
+            sd_rating = sd(rating, na.rm=TRUE),
+            count = n(),
+            se_rating = sd_rating/sqrt(count),
+            t_critical = qt(0.975, count-1), 
+            margin_of_error = t_critical * se_rating,
+            lower = round((mean_rating - t_critical * se_rating),digits=2),
+            upper = round((mean_rating + t_critical * se_rating), digits=2)
+            )
+
+t.test(rating ~ movies_plot$t_critical, data = movies_plot)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  rating by movies_plot$t_critical
+## t = 3, df = 31, p-value = 0.01
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  0.16 1.13
+## sample estimates:
+## mean in group 2.07387306790403 mean in group 2.13144954555978 
+##                           7.57                           6.93</code></pre>
+<p>We are now reproducing the graph from above.</p>
+<pre class="r"><code>library(ggThemeAssist)
+
+#assigning colors to the two directors
+colors = ifelse(movies_plot$director == &quot;Steven Spielberg&quot;, &quot;#fb8072&quot;, &quot;#41b6c4&quot;)
+colorss = ifelse(movies_plot$director == &quot;Steven Spielberg&quot;, &quot;#41b6c4&quot;, &quot;#fb8072&quot;)
+
+#creating the graph using rectanglefor the intersection areas, adding coordinates and adapting design 
+movies_boxplot &lt;- ggplot() +
+  geom_errorbar(movies_plot, mapping = aes(x=rating, y=reorder(director, rating), xmin=lower, xmax=upper), 
+                width=0.2, size=1, color=colors) +
+  geom_point(movies_plot, mapping = aes(x=mean_rating, y=director, color=colorss)) +
+  geom_text(aes(label=movies_plot$mean_rating),hjust=0, vjust=0, x=(movies_plot$mean_rating), y=movies_plot$director, 
+            size=5, vjust = -1.5) +
+  geom_text(aes(label=movies_plot$upper),hjust=0, vjust=0, x=((movies_plot$upper)), y=movies_plot$director, size=4) +
+  geom_text(aes(label=movies_plot$lower),hjust=0, vjust=0, x=(movies_plot$lower), y=movies_plot$director, size=4) +
+  theme_bw() +
+  labs(title = &quot;Do Spielberg and Burton have the same mean IMBD rating?&quot;, 
+       x = &quot;Mean IMDB Rating&quot;, y = NULL, subtitle = &quot;95% confidence intervals overlap&quot;) +
+  geom_rect(movies_plot, mapping = aes(x=rating, y=reorder(director, rating), xmin=movies_plot$upper[4], 
+                                       xmax=movies_plot$lower[1], ymin=0, ymax=3), fill = &quot;grey&quot;, alpha = 0.03) +
+  scale_x_continuous(expand=c(-0.17,-0.17),breaks= c(6.5, 7.0, 7.5))  + 
+  theme(legend.position = &quot;none&quot;)
+  
+  
+movies_boxplot</code></pre>
+<p><img src="/blogs/blog4_files/figure-html/unnamed-chunk-2-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+
+                        </div>
+                    </section>
+            <!-- Disqus Inject -->
+                
+            </div>
+            
+        <!-- Footer -->
+            
+                <!-- Footer -->
+    <footer id="footer">
+        <div class="inner">
+            <ul class="icons">
+                
+                    <li><a href="https://www.twitter.com" class="icon alt fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+                
+                    <li><a href="https://www.facebook.com" class="icon alt fa-facebook" target="_blank"><span class="label">Facebook</span></a></li>
+                
+                    <li><a href="https://www.instagram.com" class="icon alt fa-instagram" target="_blank"><span class="label">Instagram</span></a></li>
+                
+                    <li><a href="https://www.github.com" class="icon alt fa-github" target="_blank"><span class="label">GitHub</span></a></li>
+                
+                    <li><a href="https://www.linkedin.com" class="icon alt fa-linkedin" target="_blank"><span class="label">LinkedIn</span></a></li>
+                
+            </ul>
+            <ul class="copyright">
+                <li>&copy; Company Name</li>
+                
+                <li>Design:  <a href="https://www.html5up.net">HTML5 UP</a></li>
+                
+            </ul>
+        </div>
+    </footer>
+
+            
+        </div>
+
+    <!-- Scripts -->
+        <!-- Scripts -->
+    <!-- jQuery -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.scrolly.min.js"></script>
+    <script src="/js/jquery.scrollex.min.js"></script>
+    <script src="/js/skel.min.js"></script>
+    <script src="/js/util.js"></script>
+
+    
+
+    <!-- Main JS -->
+    <script src="/js/main.js"></script>
+
+    
+
+    
+
+    </body>
+</html>

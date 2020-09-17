@@ -1,0 +1,219 @@
+---
+title: "Analysis of movies"
+output: html_document
+---
+<!-- --- -->
+<!-- title: "Session 2: Homework 1" -->
+<!-- author: "Study Group 12" -->
+<!-- date: "`r Sys.Date()`" -->
+<!-- output: -->
+<!--   html_document: -->
+<!--     theme: flatly -->
+<!--     highlight: zenburn -->
+<!--     number_sections: yes -->
+<!--     toc: yes -->
+<!--     toc_float: yes -->
+<!--     code_folding: show -->
+<!-- --- -->
+
+
+```{r, setup}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(lubridate)
+library(fivethirtyeight)
+library(here)
+library(ggthemes) 
+library(ggrepel) # to avoid overlapping legends
+library(skimr)
+library(janitor)
+library(vroom) 
+library(tidyquant)
+```
+
+# Analysis of movies- IMDB dataset
+
+We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movie dataset](https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset)
+
+  
+```{r,load_movies, warning=FALSE, message=FALSE}
+
+#loading dataset movies using read_csv
+movies <- read_csv(here::here("data", "movies.csv"))
+glimpse(movies)
+
+```
+
+We used the skim command to check whether the dataset has missing values and duplicates. The output of the skim function revealed that our dataset does not contain missing values but that certain variables (title, genre and director) do have duplicates. 
+
+```{r, missing_and_duplicates}
+skim(movies)
+```
+
+Table with the count of movies by genre, ranked in descending order:
+
+```{r count_movies_by_genre}
+
+#Count of movies grouped by genre
+movies_by_genre <- movies %>%
+  group_by(genre) %>%
+  summarise(count_of_movies = n()) %>%
+  arrange(desc(count_of_movies))
+
+movies_by_genre
+
+```
+
+Table showing the return on budget grouped by genre:
+
+```{r return_on_budget}
+
+#Calculating the return on budget by genre which is the average gross earning/average budget 
+return_on_movie_budgets <- movies %>%
+  group_by(genre) %>%
+  summarise(average_gross_earning = mean(gross), average_budget = mean(budget)) %>%
+  mutate(return_on_budget = average_gross_earning/average_budget) %>%
+  arrange(desc(return_on_budget))
+
+return_on_movie_budgets
+
+```
+
+Table showing the summary statitics for revenue for 15 movie directors:
+
+```{r, top_15_directors}
+
+#Revenue statitics for top 15 movie directors
+top_15_directors <- movies %>%
+  group_by(director) %>%
+  summarise(sum_revenue = sum(gross), mean_revenue = mean(gross), median_revenue = median(gross), std_revenue = sd(gross)) %>%
+  arrange(desc(sum_revenue)) %>%
+  head(15)
+
+top_15_directors
+
+```
+
+Distribution of ratings by genre:
+
+```{r, ratings_by_genre}
+
+# Summarising data grouped by genre 
+ratings_by_genre <- movies %>%
+  group_by(genre) %>%
+  summarise(mean_rating = mean(rating), min_rating = min(rating), max_rating = max(rating), median_rating = median(rating), std_rating = sd(rating))
+
+ratings_by_genre
+
+# Creating a density plot of the spread of ratings for various movie genres
+ggplot(movies, aes(x=rating)) +
+  geom_density() +
+  facet_wrap(~genre)+
+  labs(title = "Density plots of the distribution of ratings for different genres",
+    y = "Density",
+    x = "Rating")+
+    theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  )
+
+# Creating a box plot showing the spread of ratings for various movie genres
+ggplot(movies, aes(x=genre, y=rating)) +
+  geom_boxplot() +
+   labs(title = "Box plot of the distribution of ratings for different genres",
+    y = "Rating ",
+    x = "Genres")+
+    theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold"), axis.text.x = element_text(angle = 90)
+  )
+
+```
+
+## Use `ggplot` to answer the following
+  
+We created a scatterplot between gross revenue and cast Facebook likes and calculated the correlation between the two variables. A weak positive correlation (0.213) between `gross` and `cast_facebook_likes` suggests suggests that the two have no multicollinearity. On the X axis we have mapped `cast_facebook_likes` and on the Y axis we have mapped the variable `gross`. 
+  
+```{r, gross_on_fblikes}
+
+#Scatterplot between Gross Revenue and Cast Facebook Likes
+ggplot(movies, aes(x=cast_facebook_likes, y=gross)) +
+  geom_point(alpha = 0.3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth()+
+   labs(title = "Scatter plot between Gross Revenue and Cast Facebook Likes",
+    y = "Gross Revenue",
+    x = "Cast Facebook Likes")+
+    theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  )
+
+#calculating the correlation between the two variables
+cor(movies$gross, movies$cast_facebook_likes)
+
+```
+
+Next, we created a scatterplot between `gross` revenue and `budget` and calculated the correlation between the two variables.Correlation of 0.641 indicates that budget might be a better predictor of gross revenue when compared with cast Facebook likes but further analysis will be needed. 
+
+```{r, gross_on_budget}
+
+#Scatterplot of gross revenue vs budget
+ggplot(movies, aes(x=budget, y=gross)) +
+  geom_point(alpha = 0.3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth()+
+   labs(title = "Scatter plot between Gross Revenue and Budget",
+    y = "Gross Revenue",
+    x = "Budget")+
+    theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  )
+
+#calculating the correlation between the two variables
+cor(movies$gross, movies$budget)
+
+
+```
+  
+Finally, we created a scatterplot between gross revenue and ratings, faceted by genre and calculated the correlation between the two variables. A weak positive correlation (0.269) between `gross` and `rating` suggests that the two have no multicollinearity. After perfroming a linear regression (significance level <0.001) we concluded that the rating is a good predictor of movie revenue at the box office. 
+  
+```{r, gross_on_rating}
+
+#Scatterplots of gross revenue vs rating for various genres
+ggplot(movies, aes(x=rating, y=gross)) +
+  geom_point(alpha = 0.3) +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_wrap(~genre) +
+  geom_smooth()+
+  labs(title = "Scatter plot between Gross Revenue and Rating",
+    y = "Gross Revenue",
+    x = "Rating")+
+    theme(
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold")
+  )
+
+#calculating the correlation between the two variables
+cor(movies$gross, movies$rating)
+model<-lm(gross~rating,data=movies)
+summary(model)
+
+```
+

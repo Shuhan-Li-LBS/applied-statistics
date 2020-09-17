@@ -8,39 +8,42 @@
     <language>en-us</language>
     <lastBuildDate>Tue, 31 Oct 2017 22:27:21 -0500</lastBuildDate><atom:link href="/blogs/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Aliquam</title>
-      <link>/blogs/aliquam/</link>
-      <pubDate>Tue, 31 Oct 2017 22:42:51 -0500</pubDate>
+      <title>Analysis of movies</title>
+      <link>/blogs/blog2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/blogs/aliquam/</guid>
-      <description></description>
+      <guid>/blogs/blog2/</guid>
+      <description>knitr::opts_chunk$set(message = FALSE, warning = FALSE, tidy=FALSE, # display code as typedsize=&amp;quot;small&amp;quot;) # slightly smaller font for codeoptions(digits = 3)# default figure sizeknitr::opts_chunk$set(fig.width=6.75, fig.height=6.75,fig.align = &amp;quot;center&amp;quot;)Analysis of movies- IMDB datasetWe will look at a subset sample of movies, taken from the Kaggle IMDB 5000 movie dataset
+#loading dataset movies using read_csvmovies &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;, &amp;quot;movies.csv&amp;quot;))glimpse(movies)## Rows: 2,961## Columns: 11## $ title &amp;lt;chr&amp;gt; &amp;quot;Avatar&amp;quot;, &amp;quot;Titanic&amp;quot;, &amp;quot;Jurassic World&amp;quot;, &amp;quot;The Ave.</description>
     </item>
     
     <item>
-      <title>Tempus</title>
-      <link>/blogs/tempus/</link>
-      <pubDate>Tue, 31 Oct 2017 22:26:13 -0500</pubDate>
+      <title>Beer, wine, and Spirits</title>
+      <link>/blogs/blog1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/blogs/tempus/</guid>
-      <description></description>
+      <guid>/blogs/blog1/</guid>
+      <description>knitr::opts_chunk$set(message = FALSE, warning = FALSE, tidy=FALSE, # display code as typedsize=&amp;quot;small&amp;quot;) # slightly smaller font for codeoptions(digits = 3)# default figure sizeknitr::opts_chunk$set(fig.width=6.75, fig.height=6.75,fig.align = &amp;quot;center&amp;quot;)Where Do People Drink The Most Beer, Wine And Spirits?Back in 2014, fivethiryeight.com published an article on alchohol consumption in different countries. The data drinks is available as part of the fivethirtyeight package. Make sure you have installed the fivethirtyeight package before proceeding.</description>
     </item>
     
     <item>
-      <title>Magna</title>
-      <link>/blogs/magna/</link>
-      <pubDate>Tue, 31 Oct 2017 22:26:09 -0500</pubDate>
+      <title>Gapminder Revisited</title>
+      <link>/blogs/blog3/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/blogs/magna/</guid>
-      <description></description>
+      <guid>/blogs/blog3/</guid>
+      <description>Gapminder revisitedImporting and cleaning data:
+# load gapminder HIV datahiv &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;adults_with_hiv_percent_age_15_49.csv&amp;quot;))life_expectancy &amp;lt;- read_csv(here::here(&amp;quot;data&amp;quot;,&amp;quot;life_expectancy_years.csv&amp;quot;))# get World bank data using wbstatsindicators &amp;lt;- c(&amp;quot;SP.DYN.TFRT.IN&amp;quot;,&amp;quot;SE.PRM.NENR&amp;quot;, &amp;quot;SH.DYN.MORT&amp;quot;, &amp;quot;NY.GDP.PCAP.KD&amp;quot;)library(wbstats)worldbank_data &amp;lt;- wb_data(country=&amp;quot;countries_only&amp;quot;, #countries only- no aggregates like Latin America, Europe, etc.indicator = indicators, start_date = 1960, end_date = 2016)# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels, from the World Bank API countries &amp;lt;- wbstats::wb_cachelist$countriesWe first transformed the life expectancy and HIV data into long format and performed an inner join on the year and country column to remove observations that were not common between the two datasets.</description>
     </item>
     
     <item>
-      <title>Ipsum</title>
-      <link>/blogs/ipsum/</link>
-      <pubDate>Tue, 31 Oct 2017 21:28:43 -0500</pubDate>
+      <title>IMDB ratings</title>
+      <link>/blogs/blog4/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/blogs/ipsum/</guid>
-      <description>Nullam et orci eu lorem consequat tincidunt vivamus et sagittis magna sed nunc rhoncus condimentum sem. In efficitur ligula tate urna. Maecenas massa sed magna lacinia magna pellentesque lorem ipsum dolor. Nullam et orci eu lorem consequat tincidunt. Vivamus et sagittis tempus.</description>
+      <guid>/blogs/blog4/</guid>
+      <description>IMDB ratings: Differences between directorsWe will now consider the IMBD ratings data.
+H0: Spielberg and Burton have the same mean IMDB ratings.H1: Spielberg and Burton do not have the same mean IMDB ratings.Resulting test stats: t-stat for a confidence level of 95%, t-stat &amp;gt; 1.96We want to refuse H0 and accept H1 to conclude that there is a difference in mean between Spielberg and Burton.</description>
     </item>
     
   </channel>

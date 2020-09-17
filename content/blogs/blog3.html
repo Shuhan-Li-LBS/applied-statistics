@@ -1,0 +1,343 @@
+---
+title: "Gapminder Revisited"
+output: html_document
+---
+
+
+
+<div id="gapminder-revisited" class="section level1">
+<h1>Gapminder revisited</h1>
+<p>Importing and cleaning data:</p>
+<pre class="r"><code># load gapminder HIV data
+hiv &lt;- read_csv(here::here(&quot;data&quot;,&quot;adults_with_hiv_percent_age_15_49.csv&quot;))
+life_expectancy &lt;- read_csv(here::here(&quot;data&quot;,&quot;life_expectancy_years.csv&quot;))
+
+# get World bank data using wbstats
+indicators &lt;- c(&quot;SP.DYN.TFRT.IN&quot;,&quot;SE.PRM.NENR&quot;, &quot;SH.DYN.MORT&quot;, &quot;NY.GDP.PCAP.KD&quot;)
+
+
+library(wbstats)
+
+worldbank_data &lt;- wb_data(country=&quot;countries_only&quot;, #countries only- no aggregates like Latin America, Europe, etc.
+                          indicator = indicators, 
+                          start_date = 1960, 
+                          end_date = 2016)
+
+# get a dataframe of information regarding countries, indicators, sources, regions, indicator topics, lending types, income levels,  from the World Bank API 
+countries &lt;-  wbstats::wb_cachelist$countries</code></pre>
+<p>We first transformed the life expectancy and HIV data into long format and performed an inner join on the year and country column to remove observations that were not common between the two datasets. We then did an inner join of the combined data (HIV and life expectancy) with the world bank data and added the regions column from the countries dataset. We named the combined dataset <code>wb_lifeExp_hiv</code>. Finally, we created an extended version of the world bank dataset by adding the regions column from <code>countries</code> onto it.</p>
+<pre class="r"><code># putting the life expectancy data into long format
+life_expectancy &lt;- life_expectancy %&gt;% 
+  pivot_longer(cols=&quot;1800&quot;:&quot;2100&quot;,  values_to= &quot;Life_Exp&quot;, names_to = &quot;Year&quot;)
+
+# putting the hiv data into long format
+hiv &lt;- hiv %&gt;% 
+  pivot_longer(cols=&quot;1979&quot;:&quot;2011&quot;,  values_to= &quot;HIV&quot;, names_to = &quot;Year&quot;)
+
+
+#extracting the observations (based on year of observation) from the life expectancy data for which there are observations in the HIV dataset
+life_expectancy_cleaned &lt;- life_expectancy %&gt;% 
+  mutate(Year= as.character(Year))
+
+
+#joining the life exp and HIV datasets
+life_exp_hiv &lt;-  
+  inner_join(life_expectancy_cleaned, hiv, by= c(&quot;Year&quot;, &quot;country&quot; ))
+
+
+worldbank_data &lt;- 
+  worldbank_data %&gt;% 
+  rename(Year=&quot;date&quot;) %&gt;% 
+  mutate(Year= as.character(Year))
+
+#joining all three datasets and adding in the region column from the countries dataset
+wb_lifeExp_hiv &lt;- inner_join(worldbank_data, life_exp_hiv, by=c(&quot;country&quot;, &quot;Year&quot;))
+
+wb_lifeExp_hiv &lt;- inner_join(wb_lifeExp_hiv, countries %&gt;% select(region, country), by=c(&quot;country&quot;))
+
+world_bank_extended &lt;- inner_join(worldbank_data, countries %&gt;% select(region, country), by=c(&quot;country&quot;))</code></pre>
+<p>Relationship between life expectancy and HIV prevalence:</p>
+<pre class="r"><code>#plotting the relationship between life expectancy and HIV prevalence 
+ggplot(wb_lifeExp_hiv, aes(x= HIV, y=Life_Exp)) +
+  geom_point(size=0.08, alpha=0.3)+
+  geom_smooth(method = &quot;lm&quot;)+
+  scale_x_log10()+
+  labs (
+    title = &quot;Life Expectancy  vs HIV Prevalence by Region&quot;,
+    x= &quot;HIV Prevalence per 100 population&quot;,
+    y=&quot;Life Expectancy&quot;
+    
+  )+
+  theme_clean()+
+  facet_wrap(~region)</code></pre>
+<p><img src="/blogs/blog3_files/figure-html/life%20expectancy%20and%20HIV%20prevalence,%20fig2-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Relationship between fertility rate and GDP per capita:</p>
+<p>From the graph below we can clearly see that as GDP per capita increases, the fertility rate decreases as women who are employed tend to have fewer children, slightly later in their lives. Moreover, people in rich countries tend to have lesser children because children need a higher level of education to suceed in richer countries and therefore prove to be more expensive.</p>
+<pre class="r"><code>#plotting the relationship between life expectancy and HIV prevalence 
+ggplot(world_bank_extended, aes(x= NY.GDP.PCAP.KD/1000, y=SP.DYN.TFRT.IN)) +
+  geom_point(size=0.08, alpha=0.3)+
+  geom_smooth(method=&#39;lm&#39;)+
+  scale_x_log10()+
+  labs (
+    title = &quot;Relationship between fertility rate and GDP per capita&quot;,
+    x=&quot;GDP per capita (in ,000 constant 2010 USD)&quot;,
+    y=&quot;Fertility Rate&quot;,
+    caption=&quot; Source: World Bank&quot;
+  )+
+  theme_clean()+
+  facet_wrap(~region)+
+  scale_x_continuous(labels=scales::dollar_format())</code></pre>
+<p><img src="/blogs/blog3_files/figure-html/fertility_gdp_per_cap,%20fig3-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Regions that have observations with missing HIV data:</p>
+<p>From the graph we can see that in this dataset, Europe and Central Asia have the most observations with missing data for HIV.</p>
+<pre class="r"><code>wb_lifeExp_hiv %&gt;% 
+  #filtering for observations with missing values
+  group_by(region) %&gt;% 
+  filter(is.na(HIV)) %&gt;% 
+  summarise(count=n()) %&gt;% 
+  ggplot(aes(x=fct_reorder(region, count), y= count))+
+  geom_col()+
+  coord_flip()+
+  labs (
+    title = &quot;Europe and central asia have the most observations with missing HIV data!&quot;,
+    y= &quot;Number of observations with missing HIV data&quot;
+  )+
+  theme_clean()+
+  theme(
+    axis.title.y=element_blank()
+  )</code></pre>
+<p><img src="/blogs/blog3_files/figure-html/observations%20with%20missing%20HIV%20data,%20fig3-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>worldbank_data &lt;- worldbank_data%&gt;%
+  rename(date=&quot;Year&quot;)
+  
+#Add region information using the countries dataframe, joined on country column
+mortality &lt;- left_join(worldbank_data, countries[c(&quot;country&quot;, &quot;region&quot;)], by = &quot;country&quot;)
+
+#By region
+#Create mortality rate table by year and region by averaging
+mortality_regions &lt;- na.exclude(mortality[c(&quot;region&quot;, &quot;country&quot;, &quot;date&quot;, &quot;SH.DYN.MORT&quot;)])
+mortality_regions &lt;- mortality_regions %&gt;%
+  group_by(date, region) %&gt;%
+  summarise(mortality = mean(SH.DYN.MORT)) %&gt;%
+  arrange(region, date)
+
+#Create table with start mortality rate by year and region
+mortality_regions_start &lt;- mortality_regions[!duplicated(mortality_regions$region, mortality_regions$date),]
+mortality_regions_start &lt;- mortality_regions_start[c(&quot;region&quot;, &quot;mortality&quot;)] %&gt;%
+  arrange(region)
+
+#Create table with end mortality rate by year and region
+mortality_regions &lt;- mortality_regions %&gt;%
+  arrange(desc(date), desc(region))
+mortality_regions_stop &lt;- mortality_regions[!duplicated(mortality_regions$region, mortality_regions$date),]
+mortality_regions_stop &lt;- mortality_regions_stop[c(&quot;region&quot;, &quot;mortality&quot;)] %&gt;%
+  arrange(region)
+
+#Create table with change in mortality rate by region
+mortality_change_regions &lt;- data.frame(region = mortality_regions_start$region, mortality_change = (mortality_regions_stop[c(&quot;mortality&quot;)] - mortality_regions_start[c(&quot;mortality&quot;)]) / mortality_regions_start[c(&quot;mortality&quot;)])
+
+#By country
+#Create mortality rate table by year and country by averaging
+mortality_countries &lt;- na.exclude(mortality[c(&quot;region&quot;, &quot;country&quot;, &quot;date&quot;, &quot;SH.DYN.MORT&quot;)])
+mortality_countries &lt;- mortality_countries %&gt;%
+  group_by(date, country) %&gt;%
+  summarise(mortality = mean(SH.DYN.MORT)) %&gt;%
+  arrange(country, date)
+
+#Create table with start mortality rate by year and country
+mortality_countries_start &lt;- mortality_countries[!duplicated(mortality_countries$country, mortality_countries$date),]
+mortality_countries_start &lt;- mortality_countries_start[c(&quot;country&quot;, &quot;mortality&quot;)] %&gt;%
+  arrange(country)
+
+#Create table with end mortality rate by year and country
+mortality_countries &lt;- mortality_countries %&gt;%
+  arrange(desc(date), desc(country))
+mortality_countries_stop &lt;- mortality_countries[!duplicated(mortality_countries$country, mortality_countries$date),]
+mortality_countries_stop &lt;- mortality_countries_stop[c(&quot;country&quot;, &quot;mortality&quot;)] %&gt;%
+  arrange(country)
+
+#Create table with change in mortality rate by country
+mortality_change_countries &lt;- data.frame(country = mortality_countries_start$country, mortality_change = (-mortality_countries_stop[c(&quot;mortality&quot;)] + mortality_countries_start[c(&quot;mortality&quot;)]) / mortality_countries_start[c(&quot;mortality&quot;)])
+
+mortality_change_countries &lt;- mortality_change_countries %&gt;% 
+  mutate(mortality= mortality*100) %&gt;% 
+  rename(Percentage_Change_in_mortality_rate= &quot;mortality&quot;) %&gt;% 
+  inner_join(countries %&gt;% select(region, country), by=c(&quot;country&quot;))
+
+
+#display top 5 and bottom 5 countries for various regions
+paste(&quot;top 5 countries that have seen greatest improvement in Sub-Saharan Africa&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in Sub-Saharan Africa&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Sub-Saharan Africa&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##       country Percentage_Change_in_mortality_rate             region
+## 1  Cabo Verde                                90.0 Sub-Saharan Africa
+## 2   Mauritius                                86.1 Sub-Saharan Africa
+## 3  Seychelles                                85.8 Sub-Saharan Africa
+## 4      Malawi                                85.8 Sub-Saharan Africa
+## 5 Gambia, The                                84.0 Sub-Saharan Africa</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in Sub-Saharan Africa&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in Sub-Saharan Africa&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Sub-Saharan Africa&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##             country Percentage_Change_in_mortality_rate             region
+## 1           Somalia                                34.6 Sub-Saharan Africa
+## 2              Chad                                50.1 Sub-Saharan Africa
+## 3           Namibia                                51.1 Sub-Saharan Africa
+## 4           Lesotho                                51.5 Sub-Saharan Africa
+## 5 Equatorial Guinea                                54.1 Sub-Saharan Africa</code></pre>
+<pre class="r"><code>paste(&quot;top 5 countries that have seen greatest improvement in Middle East &amp; North Africa&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in Middle East &amp; North Africa&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Middle East &amp; North Africa&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##                country Percentage_Change_in_mortality_rate
+## 1                 Oman                                96.7
+## 2              Bahrain                                96.3
+## 3 United Arab Emirates                                96.1
+## 4                Libya                                95.4
+## 5         Saudi Arabia                                95.1
+##                       region
+## 1 Middle East &amp; North Africa
+## 2 Middle East &amp; North Africa
+## 3 Middle East &amp; North Africa
+## 4 Middle East &amp; North Africa
+## 5 Middle East &amp; North Africa</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in Middle East &amp; North Africa&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in Middle East &amp; North Africa&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Middle East &amp; North Africa&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##              country Percentage_Change_in_mortality_rate
+## 1           Djibouti                                63.5
+## 2 West Bank and Gaza                                80.4
+## 3              Malta                                82.4
+## 4               Iraq                                85.1
+## 5        Yemen, Rep.                                86.1
+##                       region
+## 1 Middle East &amp; North Africa
+## 2 Middle East &amp; North Africa
+## 3 Middle East &amp; North Africa
+## 4 Middle East &amp; North Africa
+## 5 Middle East &amp; North Africa</code></pre>
+<pre class="r"><code>paste(&quot;top 5 countries that have seen greatest improvement in Europe &amp; Central Asia&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in Europe &amp; Central Asia&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Europe &amp; Central Asia&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##    country Percentage_Change_in_mortality_rate                region
+## 1 Portugal                                96.9 Europe &amp; Central Asia
+## 2   Turkey                                95.3 Europe &amp; Central Asia
+## 3    Italy                                93.4 Europe &amp; Central Asia
+## 4   Cyprus                                93.2 Europe &amp; Central Asia
+## 5   Poland                                92.8 Europe &amp; Central Asia</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in Europe &amp; Central Asia&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in Europe &amp; Central Asia&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Europe &amp; Central Asia&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##           country Percentage_Change_in_mortality_rate                region
+## 1          Monaco                                64.9 Europe &amp; Central Asia
+## 2    Turkmenistan                                68.2 Europe &amp; Central Asia
+## 3 Slovak Republic                                71.8 Europe &amp; Central Asia
+## 4         Ukraine                                72.8 Europe &amp; Central Asia
+## 5         Moldova                                76.1 Europe &amp; Central Asia</code></pre>
+<pre class="r"><code>paste(&quot;top 5 countries that have seen greatest improvement in Latin America &amp; Caribbean&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in Latin America &amp; Caribbean&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Latin America &amp; Caribbean&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##               country Percentage_Change_in_mortality_rate
+## 1               Chile                                95.1
+## 2                Peru                                93.4
+## 3         El Salvador                                92.0
+## 4             Ecuador                                91.6
+## 5 Antigua and Barbuda                                91.4
+##                      region
+## 1 Latin America &amp; Caribbean
+## 2 Latin America &amp; Caribbean
+## 3 Latin America &amp; Caribbean
+## 4 Latin America &amp; Caribbean
+## 5 Latin America &amp; Caribbean</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in Latin America &amp; Caribbean&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in Latin America &amp; Caribbean&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;Latin America &amp; Caribbean&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##               country Percentage_Change_in_mortality_rate
+## 1        Bahamas, The                                53.9
+## 2              Guyana                                65.1
+## 3            Suriname                                65.6
+## 4       Venezuela, RB                                69.4
+## 5 Trinidad and Tobago                                71.7
+##                      region
+## 1 Latin America &amp; Caribbean
+## 2 Latin America &amp; Caribbean
+## 3 Latin America &amp; Caribbean
+## 4 Latin America &amp; Caribbean
+## 5 Latin America &amp; Caribbean</code></pre>
+<pre class="r"><code>paste(&quot;top 5 countries that have seen greatest improvement in South Asia&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in South Asia&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;South Asia&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##      country Percentage_Change_in_mortality_rate     region
+## 1   Maldives                                96.9 South Asia
+## 2  Sri Lanka                                91.3 South Asia
+## 3      Nepal                                89.3 South Asia
+## 4     Bhutan                                88.7 South Asia
+## 5 Bangladesh                                86.3 South Asia</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in South Asia&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in South Asia&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;South Asia&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##       country Percentage_Change_in_mortality_rate     region
+## 1    Pakistan                                70.8 South Asia
+## 2 Afghanistan                                80.4 South Asia
+## 3       India                                83.1 South Asia
+## 4  Bangladesh                                86.3 South Asia
+## 5      Bhutan                                88.7 South Asia</code></pre>
+<pre class="r"><code>paste(&quot;top 5 countries that have seen greatest improvement in East Asia &amp; Pacific&quot;)</code></pre>
+<pre><code>## [1] &quot;top 5 countries that have seen greatest improvement in East Asia &amp; Pacific&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;East Asia &amp; Pacific&quot;) %&gt;% 
+  arrange(desc(Percentage_Change_in_mortality_rate)) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##       country Percentage_Change_in_mortality_rate              region
+## 1 Korea, Rep.                                97.0 East Asia &amp; Pacific
+## 2   Singapore                                94.3 East Asia &amp; Pacific
+## 3       Japan                                93.2 East Asia &amp; Pacific
+## 4    Thailand                                93.0 East Asia &amp; Pacific
+## 5       China                                91.6 East Asia &amp; Pacific</code></pre>
+<pre class="r"><code>paste(&quot;5 countries that have seen least improvement in East Asia &amp; Pacific&quot;)</code></pre>
+<pre><code>## [1] &quot;5 countries that have seen least improvement in East Asia &amp; Pacific&quot;</code></pre>
+<pre class="r"><code>mortality_change_countries %&gt;% 
+  filter(region== &quot;East Asia &amp; Pacific&quot;) %&gt;% 
+  arrange(Percentage_Change_in_mortality_rate) %&gt;% 
+  head(5)</code></pre>
+<pre><code>##                     country Percentage_Change_in_mortality_rate
+## 1     Micronesia, Fed. Sts.                                42.5
+## 2 Korea, Dem. People’s Rep.                                43.0
+## 3                     Palau                                47.5
+## 4                     Nauru                                54.3
+## 5                    Tuvalu                                67.2
+##                region
+## 1 East Asia &amp; Pacific
+## 2 East Asia &amp; Pacific
+## 3 East Asia &amp; Pacific
+## 4 East Asia &amp; Pacific
+## 5 East Asia &amp; Pacific</code></pre>
+</div>
